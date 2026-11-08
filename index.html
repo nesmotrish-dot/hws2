@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotlight 4 — Home words</title>
+<style>
+  :root{
+    --bg:#f4f7fb;
+    --card:#ffffff;
+    --ink:#22313f;
+    --muted:#6b7c8f;
+    --accent:#2d7ff9;
+    --accent-soft:#e8f1ff;
+    --ok:#1f9d55;
+    --ok-soft:#e3f8ec;
+    --err:#d64545;
+    --err-soft:#fdeaea;
+    --line:#dbe4ef;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.45;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:18px 14px 60px}
+  h1{font-size:26px;margin:10px 0 6px}
+  .sub{color:var(--muted);margin:0 0 22px;font-size:15px}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    margin-bottom:18px;
+    box-shadow:0 6px 18px rgba(30,55,90,.06);
+  }
+  h2{font-size:19px;margin:0 0 14px}
+  .hint{color:var(--muted);font-size:14px;margin:0 0 14px}
+
+  /* ---------- СЛОВАРЬ ---------- */
+  .vocab{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:620px){.vocab{grid-template-columns:1fr 1fr}}
+  .word{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#fff;
+    cursor:pointer;
+    transition:transform .08s ease, border-color .15s ease, background .15s ease;
+    user-select:none;
+  }
+  .word:hover{background:var(--accent-soft);border-color:#b9d4ff}
+  .word:active{transform:scale(.985)}
+  .speaker{
+    flex:0 0 34px;height:34px;border-radius:50%;
+    background:var(--accent-soft);color:var(--accent);
+    display:grid;place-items:center;font-size:16px;
+  }
+  .word-text{font-weight:700;font-size:16px}
+  .word-tr{color:var(--muted);font-size:14px;margin-left:auto;text-align:right}
+  .word .trans{
+    display:none;
+    font-size:12px;color:#8a9bb0;
+    margin-top:2px;
+  }
+  .word.show .trans{display:block}
+  .word.hidden-trans .word-tr{color:transparent;user-select:none}
+
+  /* ---------- ЗАДАНИЕ 1 ---------- */
+  .match-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .match-word{
+    font-weight:700;
+    padding:10px 12px;
+    background:var(--accent-soft);
+    border-radius:12px;
+    border:1px solid #cfe0ff;
+  }
+  select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#fff;
+    font-size:15px;
+    color:var(--ink);
+    outline:none;
+  }
+  select:focus{border-color:var(--accent)}
+  .btn{
+    appearance:none;border:0;
+    background:var(--accent);color:#fff;
+    padding:12px 18px;border-radius:14px;
+    font-size:16px;font-weight:700;cursor:pointer;
+    transition:filter .15s ease, transform .08s ease;
+  }
+  .btn:hover{filter:brightness(.95)}
+  .btn:active{transform:scale(.98)}
+  .btn.secondary{
+    background:#fff;color:var(--accent);
+    border:2px solid var(--accent);
+  }
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .result{
+    margin-top:12px;padding:12px 14px;border-radius:12px;
+    display:none;font-weight:600;
+  }
+  .result.ok{display:block;background:var(--ok-soft);color:var(--ok)}
+  .result.err{display:block;background:var(--err-soft);color:var(--err)}
+
+  /* ---------- ЗАДАНИЕ 2 ---------- */
+  .quiz-item{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--line)}
+  .quiz-item:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+  .quiz-q{font-weight:700;margin-bottom:8px}
+  .quiz-opts{display:flex;flex-wrap:wrap;gap:8px}
+  .quiz-opts label{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:8px 12px;border:1px solid var(--line);border-radius:12px;
+    background:#fff;cursor:pointer;font-size:14px;
+  }
+  .quiz-opts input{accent-color:var(--accent)}
+  .quiz-opts label:hover{background:#f7faff}
+  .quiz-item.correct .quiz-q::after{content:" ✅";color:var(--ok)}
+  .quiz-item.wrong .quiz-q::after{content:" ❌";color:var(--err)}
+
+  .footer{
+    text-align:center;color:var(--muted);font-size:13px;margin-top:8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Home words — Spotlight 4</h1>
+  <p class="sub">Нажми на слово, чтобы услышать произношение. Затем выполни два задания.</p>
+
+  <!-- ================= СЛОВАРЬ ================= -->
+  <section class="card">
+    <h2>📘 Словарь</h2>
+    <p class="hint">Клик по слову — озвучка. Перевод можно скрыть кнопкой, чтобы проверить себя.</p>
+
+    <div class="vocab" id="vocab"></div>
+
+    <div class="btn-row">
+      <button class="btn secondary" id="toggleTranslations" type="button">Скрыть переводы</button>
+    </div>
+  </section>
+
+  <!-- ================= ЗАДАНИЕ 1 ================= -->
+  <section class="card">
+    <h2>Задание 1. Соотнеси слово и перевод</h2>
+    <p class="hint">Выбери правильный перевод из выпадающего списка.</p>
+    <div id="matchBox"></div>
+    <div class="btn-row">
+      <button class="btn" id="checkMatch" type="button">Проверить</button>
+      <button class="btn secondary" id="resetMatch" type="button">Сбросить</button>
+    </div>
+    <div class="result" id="matchResult"></div>
+  </section>
+
+  <!-- ================= ЗАДАНИЕ 2 ================= -->
+  <section class="card">
+    <h2>Задание 2. Выбери правильный перевод</h2>
+    <p class="hint">Отметь один вариант для каждого слова.</p>
+    <div id="quizBox"></div>
+    <div class="btn-row">
+      <button class="btn" id="checkQuiz" type="button">Проверить</button>
+      <button class="btn secondary" id="resetQuiz" type="button">Сбросить</button>
+    </div>
+    <div class="result" id="quizResult"></div>
+  </section>
+
+  <p class="footer">Удачи! 💙</p>
+</div>
+
+<script>
+/* =========================================================
+   ДАННЫЕ
+   ========================================================= */
+const WORDS = [
+  { en: "block of flats", tr: "многоквартирный дом", ipa: "/blɒk əv flæts/" },
+  { en: "hall",           tr: "прихожая, коридор",     ipa: "/hɔːl/" },
+  { en: "play room",      tr: "игровая комната",       ipa: "/pleɪ ruːm/" },
+  { en: "dining room",    tr: "столовая",              ipa: "/ˈdaɪnɪŋ ruːm/" },
+  { en: "study",          tr: "кабинет",               ipa: "/ˈstʌdi/" },
+  { en: "laundry room",   tr: "прачечная",             ipa: "/ˈlɔːndri ruːm/" },
+  { en: "architect",      tr: "архитектор",            ipa: "/ˈɑːkɪtekt/" },
+  { en: "usually",        tr: "обычно",                ipa: "/ˈjuːʒuəli/" },
+  { en: "tower",          tr: "башня",                 ipa: "/ˈtaʊə/" },
+  { en: "steps",          tr: "ступени",               ipa: "/steps/" },
+  { en: "roof",           tr: "крыша",                 ipa: "/ruːf/" },
+  { en: "price",          tr: "цена",                  ipa: "/praɪs/" }
+];
+
+/* =========================================================
+   ОЗВУЧКА
+   ========================================================= */
+let voices = [];
+function loadVoices(){
+  voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+}
+if ("speechSynthesis" in window) {
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speak(text){
+  if (!("speechSynthesis" in window)) {
+    alert("В этом браузере озвучка не поддерживается. Открой файл в Chrome, Edge или Safari.");
+    return;
+  }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-GB";
+  u.rate = 0.85;
+  u.pitch = 1;
+  const preferred = voices.find(v => /en-GB/i.test(v.lang)) ||
+                    voices.find(v => /^en/i.test(v.lang));
+  if (preferred) u.voice = preferred;
+  speechSynthesis.speak(u);
+}
+
+/* =========================================================
+   СЛОВАРЬ
+   ========================================================= */
+const vocabEl = document.getElementById("vocab");
+let translationsHidden = false;
+
+function renderVocab(){
+  vocabEl.innerHTML = WORDS.map((w, i) => `
+    <div class="word ${translationsHidden ? "hidden-trans" : ""}" data-index="${i}" tabindex="0" role="button" aria-label="Прослушать ${w.en}">
+      <span class="speaker">🔊</span>
+      <span>
+        <span class="word-text">${w.en}</span>
+        <span class="trans">${w.ipa}</span>
+      </span>
+      <span class="word-tr">${w.tr}</span>
+    </div>
+  `).join("");
+
+  vocabEl.querySelectorAll(".word").forEach(el => {
+    const idx = Number(el.dataset.index);
+    const w = WORDS[idx];
+
+    const play = () => {
+      speak(w.en);
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 1600);
+    };
+
+    el.addEventListener("click", play);
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); play(); }
+    });
+  });
+}
+
+document.getElementById("toggleTranslations").addEventListener("click", function(){
+  translationsHidden = !translationsHidden;
+  this.textContent = translationsHidden ? "Показать переводы" : "Скрыть переводы";
+  renderVocab();
+});
+
+/* =========================================================
+   ЗАДАНИЕ 1: СООТНЕСИ СЛОВО И ПЕРЕВОД
+   ========================================================= */
+const matchBox = document.getElementById("matchBox");
+const matchResult = document.getElementById("matchResult");
+
+/* Перемешиваем переводы для вариантов */
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderMatch(){
+  const options = shuffle(WORDS.map(w => w.tr));
+  matchBox.innerHTML = WORDS.map((w, i) => `
+    <div class="match-row">
+      <div class="match-word">${w.en}</div>
+      <select data-index="${i}">
+        <option value="">— выбери перевод —</option>
+        ${options.map(tr => `<option value="${tr}">${tr}</option>`).join("")}
+      </select>
+    </div>
+  `).join("");
+  matchResult.className = "result";
+  matchResult.textContent = "";
+}
+
+function checkMatch(){
+  const selects = matchBox.querySelectorAll("select");
+  let correct = 0;
+  selects.forEach((sel, i) => {
+    if (sel.value === WORDS[i].tr) correct++;
+  });
+  matchResult.className = "result " + (correct === WORDS.length ? "ok" : "err");
+  matchResult.textContent = `Правильно: ${correct} из ${WORDS.length}`;
+}
+
+document.getElementById("checkMatch").addEventListener("click", checkMatch);
+document.getElementById("resetMatch").addEventListener("click", renderMatch);
+
+/* =========================================================
+   ЗАДАНИЕ 2: ВЫБЕРИ ПРАВИЛЬНЫЙ ПЕРЕВОД
+   ========================================================= */
+const quizBox = document.getElementById("quizBox");
+const quizResult = document.getElementById("quizResult");
+
+function renderQuiz(){
+  /* Для каждого слова — 1 правильный перевод + 2 случайных неправильных */
+  quizBox.innerHTML = WORDS.map((w, i) => {
+    const wrong = shuffle(WORDS.filter(x => x.tr !== w.tr)).slice(0, 2).map(x => x.tr);
+    const opts = shuffle([w.tr, ...wrong]);
+    return `
+      <div class="quiz-item" data-index="${i}">
+        <div class="quiz-q">${w.en}</div>
+        <div class="quiz-opts">
+          ${opts.map((tr, j) => `
+            <label>
+              <input type="radio" name="q${i}" value="${tr}">
+              ${tr}
+            </label>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
+  quizResult.className = "result";
+  quizResult.textContent = "";
+}
+
+function checkQuiz(){
+  const items = quizBox.querySelectorAll(".quiz-item");
+  let correct = 0;
+
+  items.forEach((item, i) => {
+    item.classList.remove("correct", "wrong");
+    const chosen = item.querySelector('input[type="radio"]:checked');
+    if (chosen && chosen.value === WORDS[i].tr) {
+      correct++;
+      item.classList.add("correct");
+    } else {
+      item.classList.add("wrong");
+    }
+  });
+
+  quizResult.className = "result " + (correct === WORDS.length ? "ok" : "err");
+  quizResult.textContent = `Правильно: ${correct} из ${WORDS.length}`;
+}
+
+document.getElementById("checkQuiz").addEventListener("click", checkQuiz);
+document.getElementById("resetQuiz").addEventListener("click", renderQuiz);
+
+/* =========================================================
+   СТАРТ
+   ========================================================= */
+renderVocab();
+renderMatch();
+renderQuiz();
+</script>
+</body>
+</html>
